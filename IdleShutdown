@@ -23,7 +23,7 @@ shutdown_cmd() {
 	shutdown -h now
 }
 
-# Finde download folder of current user (not root)
+# Find download folder of current user (not root)
 UserHome=$(eval echo ~${SUDO_USER})
 DLFolder=$UserHome"/Downloads"
 echo $DLFolder
