@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# You may have to install xprintidle.
+#
+# Make the launcher run this as root by putting gksu in front of the command.
+# 	or, something like "sudo chmod u+s /sbin/shutdown" if security is not a high priority.
+# 
+# http://advantage-bash.blogspot.com/2012/09/auto-shutdown-after-copying-downloading.html
+# http://stackoverflow.com/questions/7358611/bash-get-users-home-directory-when-they-run-a-script-as-root
+# 
+
+# Mouse idle time in minutes
+MouseIdleTime=$[ 60 ]
+
+# No download time in minutes
+NoDownloadTime=$[ 5 ]
+
+# Shutdown command
+shutdown_cmd() {    
+	echo "shutdown soon"
+	# notify-send "shutdown soon"
+	sleep 60
+	shutdown -h now
+}
+
+# Finde download folder of current user (not root)
+UserHome=$(eval echo ~${SUDO_USER})
+DLFolder=$UserHome"/Downloads"
+echo $DLFolder
+
+DLIdle=0
+SizeThen=0
+
+while true; do
+    idle=$(xprintidle)
+	MouseIdle=$[ idle / 60 / 1000 ]
+	# Get size of download folder
+	SizeNow=$(du -c $DLFolder | grep total | sed 's/total//g' )
+	SizeDiff=$(echo "$SizeNow-$SizeThen" | bc )
+	# See if download folder has grown
+	if [[ $SizeDiff == "0" ]];then
+		DLIdle=$[ DLIdle + 1 ]
+	else
+		DLIdle=0
+	fi
+	# if mouse has not been moved
+    if [ $MouseIdle -ge $MouseIdleTime ]; then
+		# and if no downloads
+		if [ $DLIdle -ge $NoDownloadTime ]; then
+			shutdown_cmd
+		fi
+	fi	
+	SizeThen=$SizeNow
+	echo "Mouse has been idle $MouseIdle / $MouseIdleTime"
+	echo "Download folder size $SizeNow"
+	echo "No download for $DLIdle / $NoDownloadTime"
+	sleep 60
+	clear
+done
